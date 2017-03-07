@@ -1,0 +1,7 @@
+chacha20-ssse3-amd64.lo: \
+ /home/parallels/Documents/gnupg-2.1.8/PLAY/src/libgcrypt/cipher/chacha20-ssse3-amd64.S \
+ /usr/include/stdc-predef.h ../config.h
+
+/usr/include/stdc-predef.h:
+
+../config.h:

@@ -1,0 +1,531 @@
+2016-07-14  Werner Koch  <wk@gnupg.org>
+
+	Release 2.4.3.
+	* configure.ac: Set LT version to C7/A7/R3.
+	* Makefile.am (distcheck-hook): New.
+
+2016-07-13  Werner Koch  <wk@gnupg.org>
+
+	build: Update config.{guess,sub} to {2016-05-15,2016-06-20}.
+	* build-aux/config.guess: Update.
+	* build-aux/config.sub: Update.
+
+	Improve test for inet_pton on Solaris.
+	* configure.ac (HAVE_INET_PTON): Add a fallback test.
+
+	Allow socket redirection with assuan_socket_connect.
+	* src/assuan-socket-connect.c (assuan_socket_connect): Use
+	set_socketaddr function.
+
+	Speedup closing fds before an exec.
+	* src/system-posix.c [__linux__]: Include dirent.h.
+	(get_max_fds) [__linux__]: Return the actual used highest fd.
+
+2016-07-05  Justus Winter  <justus@g10code.com>
+
+	Fix distcheck.
+	* tests/Makefile.am (EXTRA_DIST): Drop compiled test.
+
+2016-06-25  Werner Koch  <wk@gnupg.org>
+
+	Fix minor memory leaks.
+	* src/assuan-pipe-connect.c (socketpair_connect): Always free
+	CHILD_FDS.
+	* src/assuan-uds.c (uds_sendfd): Clear CONTROL_U to silence Valgrind.
+	* tests/fdpassing.c (main): Free FNAME.
+
+	* src/assuan-handler.c (dispatch_command): Remove dead assignment.
+
+2016-01-15  Werner Koch  <wk@gnupg.org>
+
+	Improve getting of max. number of open fds.
+	* configure.ac (AC_CHECK_FUNCS): Add getrlimit.
+	* src/assuan-pipe-connect.c (MAX_OPEN_FDS): Remove non-used macro.
+	* src/system.c (MAX_OPEN_FDS): Remove non-used macro.
+	* src/system-posix.c: Include stdint.h, sys/time.h, sys/resource.h.
+	(MAX_OPEN_FDS): Remove non-used macro.
+	(get_max_fds): New.  Taken from gnupg/common/exechelp-posix.c.
+	(__assuan_spawn): Use it here.
+
+2015-12-02  Werner Koch  <wk@gnupg.org>
+
+	Release 2.4.2.
+	* configure.ac: Bump LT version to C7/A7/R2.
+
+2015-11-27  Werner Koch  <wk@gnupg.org>
+
+	New feature to test for SOCKS5 proxy availability.
+	* src/assuan-socket.c (socks5_connect): Add special treatment for
+	empty hostnames.
+	(_assuan_sock_connect_byname): Add feature to test for proxy
+	availibility.
+	* tests/socks5.c (main): Add option --have-proxy.
+
+2015-11-26  Werner Koch  <wk@gnupg.org>
+
+	Protect connect system hook against blocking (nPth).
+	* src/assuan.h.in (ASSUAN_SYSTEM_NPTH_IMPL): Add wrapper for connect.
+
+	Do not use size_t with _assuan_read.
+	* src/assuan-socket.c (do_readn): Use ssize_t for N.
+
+2015-11-23  Werner Koch  <wk@gnupg.org>
+
+	Release 2.4.1.
+	* configure.ac: Bump LT version to C7/A7/R1.
+
+	Make socks5 test case a bit more robust.
+	* tests/socks5.c (main): Call gpgrt_init.  Check for write and read
+	errors.  Allow building of some parts even w/o getaddrinfo.
+
+2015-11-21  Werner Koch  <wk@gnupg.org>
+
+	Also try port 9150 in Tor mode.
+	* src/assuan-socket.c (TOR_PORT2): New.
+	(_assuan_sock_wsa2errno): Map WSAECONNREFUSED.
+	(socks5_connect): Fall back to TOR_PORT2.
+
+2015-11-21  Andre Heinecke  <aheinecke@intevation.de>
+
+	Fix windows build with mingw-w64 2.0.x.
+	* src/assuan-socket.c: Add errno values not defined by mingw-w64 2.0
+
+2015-11-03  Werner Koch  <wk@gnupg.org>
+
+	Release 2.4.0.
+	* configure.ac: Bump LT version to C7/A7/Ro.
+
+	w32: Use assuan_fd_t with the new socket functions.
+	* src/assuan-socket.c (socks5_connect): Use assuan_fd_t instead of
+	int.
+	(_assuan_sock_connect): Ditto.
+	(_assuan_sock_connect_byname): Ditto.
+
+	Use asprintf function from libgpg-error.
+	* configure.ac: Require libgpg-error 1.17.
+	(vasprintf): Remove ac_replace.
+	* src/assuan-defs.h [!HAVE_VASPRINTF]: Remove replace wrapper.
+	* src/assuan-logging.c (_assuan_log_control_channel):
+	(_assuan_log_control_channel): s/asprintf/gpgrt_asprintf/.
+	* src/debug.c (_assuan_debug): s/vasprintf/gpgrt_vasprintf/.
+	(_assuan_debug_begin): Ditto.
+	(_assuan_debug_add): Ditto. s/asprintf/gpgrt_asprintf/.
+
+2015-10-26  Werner Koch  <wk@gnupg.org>
+
+	Tests: Cope with broken HTTP servers.
+	* tests/socks5.c (main): Use GET instead of HEAD
+
+	Support hostname based SOCKS5 connection.
+	* src/assuan.h.in (ASSUAN_SOCK_SOCKS): New.
+	(ASSUAN_SOCK_TOR): New.
+	(assuan_sock_connect_byname): New.
+	* src/libassuan.def, src/libassuan.vers: Add that function.
+
+	* src/assuan-socket.c (socks5_connect): Add args socksport,
+	credentials, hostname, and hostport.  Implement user/password
+	authentication and domainname address type.  Change callers
+	accordingly.
+	(_assuan_sock_connect_byname): New.
+	(assuan_sock_connect_byname): New.
+
+	* tests/socks5.c (main): Add options --byname, --user, and --pass.
+
+2015-10-18  Werner Koch  <wk@gnupg.org>
+
+	Support SOCKS5 for assuan_sock_connect.
+	* src/assuan-socket.c: Include netinet/in.h and arpa/inet.h.
+	(SOCKS_PORT, TOR_PORT): New constants.
+	(tor_mode): New variable.
+	(_assuan_sock_set_flag): Add flags "tor-mode" and "socks".
+	(_assuan_sock_get_flag): Ditto.
+	(do_readn, do_writen): Always build.
+	(socks5_connect): New.
+	(use_socks): New.
+	(_assuan_sock_connect): Divert to socks5_connect if requested.
+
+	* tests/socks5.c: New.
+	* configure.ac (AH_TOP): Define GPGRT_ENABLE_ES_MACROS.
+	(AC_CHECK_FUNC): Check for getaddrinfo.
+	* tests/Makefile.am (testtools): New. Add socks5.
+	(AM_LDFLAGS): Add -no-install for easier debugging.
+
+2015-08-28  Werner Koch  <wk@gnupg.org>
+
+	Post release updates.
+
+	Release 2.3.0.
+	* configure.ac: Set LT version to C6/A6/R0.
+
+	Support Cygwin local sockets.
+	* src/assuan-socket.c (cygwin_fdtable, cygwin_fdtable_cs): New.
+	(is_cygwin_fd, insert_cygwin_fd, delete_cygwin_fd): New.
+	(assuan_sock_init) [W32]: Init the CS.
+	(assuan_sock_deinit) [W32]: Deinit the CS.
+	(read_port_and_nonce): Add arg cygwin and detect Cygwin socket files.
+	(_assuan_sock_set_flag): Add "cygwin" flag.
+	(_assuan_sock_get_flag): Ditto.
+	(do_readn, do_writen): New.
+	(_assuan_sock_bind): Create a Cygwin socket file depending on a socket
+	flag.
+	(_assuan_sock_connect): Handle the cygwin socket protocol.
+	(_assuan_sock_check_nonce): Ditto.
+
+	Read up remaining lines in assuan_inquire after reaching MAXLEN.
+	* src/assuan-inquire.c (assuan_inquire): Clear return args on error.
+	Read up remaining lines after MAXLEN has been hit.
+
+2015-08-25  Werner Koch  <wk@gnupg.org>
+
+	Add configure option --enable-build-timestamp.
+	* configure.ac (BUILD_TIMESTAMP): Set to "<none>" by default.
+
+2015-08-07  Werner Koch  <wk@gnupg.org>
+
+	Wipe the context before releasing as an extra safeguard.
+	* src/assuan-defs.h (wipememory2, wipememory): New.  Taken from GnuPG.
+	* src/assuan.c (assuan_release): Wipe the context.
+
+2015-06-30  Werner Koch  <wk@gnupg.org>
+
+	Add assuan_sock_set_flag and assuan_sock_get_flag.
+	* src/assuan-socket.c (_assuan_sock_set_flag): New.
+	(assuan_sock_set_flag): New.
+	(_assuan_sock_get_flag, assuan_sock_get_flag): New.
+	* src/assuan.h.in (assuan_sock_set_flag): New.
+	(assuan_sock_get_flag): New.
+	* src/libassuan.def: Add them.
+	* src/libassuan.vers: Add them.
+
+2015-06-26  Werner Koch  <wk@gnupg.org>
+
+	Return GPG_ERR_SOURCE_ASSUAN on errors with no CTX.
+	* src/assuan-defs.h (_assuan_error): Use error source Assuan if no CTX
+	is given.
+
+	Do not segv if NULL is passed for CTX in sendfd and receivefd.
+	* src/assuan-buffer.c (assuan_sendfd): Check that CTX is not NULL.
+	(assuan_receivefd): Ditto.
+
+2015-06-01  Neal H. Walfield  <neal@gnu.org>
+
+	Fix documentation for assuan_inquire.
+	* doc/assuan.texi (assuan_inquire): Fix and improve description of
+	this function.
+
+2015-05-12  Werner Koch  <wk@gnupg.org>
+
+	Release 2.2.1.
+
+2015-05-07  Daniel Kahn Gillmor  <dkg@fifthhorseman.net>
+
+	clean up assuan documentation.
+	* doc/assuan.texi: fix documentation
+
+2015-05-07  Neal H. Walfield  <neal@gnu.org>
+
+	Documentation cleanups.
+
+2015-01-30  Werner Koch  <wk@gnupg.org>
+
+	w32: Use -static-libgcc to avoid linking to libgcc_s_sjlj-1.dll.
+	* src/Makefile.am (extra_ltoptions): New.
+	(libassuan_la_LDFLAGS): Use it.
+
+2015-01-28  Werner Koch  <wk@gnupg.org>
+
+	Require the use of automake 1.14.
+	* configure.ac (AM_INIT_AUTOMAKE): Add serial-tests.
+	* src/Makefile.am (INCLUDES): Rename to AM_CPPFLAGS and remove the
+	nonexistent ../include/.
+
+	w32: Fix assuan_connect_fd.
+	* src/assuan-socket-connect.c (assuan_socket_connect_fd): Map fd to
+	assuan_fd_t.
+
+	Fix gcc warning about unused values.
+	* src/debug.h: Remove traling ", 0" expression part where not useful.
+
+2015-01-27  Werner Koch  <wk@gnupg.org>
+
+	Fix WSAEADDRINUSE EADDRINUSE mismatch.
+	* src/w32-sock-nonce.inc.h (EADDRINUSE): Avoid redefining.
+	* src/assuan-socket.c (_assuan_sock_bind): Set error to EADDRINUSE.
+
+2014-12-11  Werner Koch  <wk@gnupg.org>
+
+	Release 2.2.0.
+	* configure.ac: Set LT version to C5/A5/R0.
+	(AM_INIT_AUTOMAKE): Add options.
+	* Makefile.am (AUTOMAKE_OPTIONS): Remove.
+
+2014-11-28  Werner Koch  <wk@gnupg.org>
+
+	Do not allow LFs in the redirected name.
+	* src/assuan-socket.c (eval_redirection): Stop parsing at the first
+	LF.
+
+	Implement socket file redirection.
+	* configure.ac (AC_CHECK_FUNC): Check for stat.
+	* src/assuan-socket.c (SUN_LEN): Add.
+	(eval_redirection): New.
+	(_assuan_sock_connect) [!W32]: Implement socket file redirection.
+	(_assuan_sock_set_sockaddr_un): New.
+	(assuan_sock_set_sockaddr_un): New.
+
+2014-11-07  Werner Koch  <wk@gnupg.org>
+
+	Release 2.1.3.
+	* configure.ac: Set LT version to C4/A4/R3.
+
+	w32: Remove I/O delays due to our 100ms delay after an EAGAIN.
+	* src/system-w32.c (__assuan_read): Retry using select.  Map
+	WSAECONNRESET to EPIPE.
+	(__assuan_write): Retry using select.
+	* src/assuan-buffer.c (readline) [W32]:  Return EOF instead of EPIPE.
+
+2014-08-17  Werner Koch  <wk@gnupg.org>
+
+	Release 2.1.2.
+	* configure.ac: Set LT version to C4/A4/R2.
+
+	Update build system.
+	* autogen.sh: Add --find-version stuff.  Taken from GnuPG.
+	* configure.ac: Change accordingly
+
+	Fix possible segv in a call to _assuan_debug.
+	* src/context.c (assuan_set_error): Do not pass NULL for %s in the
+	trace function.
+
+2014-06-30  Werner Koch  <wk@gnupg.org>
+
+	Avoid a vasprintf call if tracing has not been enabled.
+	* src/debug.c (_assuan_debug): Check wether CAT want to be logged.
+
+2014-04-16  Werner Koch  <wk@gnupg.org>
+
+	Fix NULL deref when tracing is enabled and malloc fails.
+	* src/debug.h (TRACE_ERR): Check CTX before a deref.
+	* src/assuan-defs.h (_assuan_error): Turn into an inline function and
+	check CTX before a deref.
+
+2014-01-10  Werner Koch  <wk@gnupg.org>
+
+	Use the generic autogen.sh script.
+	* autogen.rc: New.
+	* Makefile.am (EXTRA_DIST): Add it.
+	* autogen.sh: Update from GnuPG.
+
+	Move helper scripts to build-aux.
+	* compile, config.guess, config.rpath, config.sub, depcomp, ltmain.sh
+	* doc/mdate-sh, doc/texinfo.tex, install-sh, missing: Move to
+	build-aux/.
+	* Makefile.am (EXTRA_DIST): Remove config.rpath - it is implicitly
+	distributed.
+	* configure.ac (AC_CONFIG_AUX_DIR): New.
+	(AM_SILENT_RULES): New.
+
+2013-12-03  Werner Koch  <wk@gnupg.org>
+
+	Add build support for ppc64le.
+	* config.guess, config.sub: Update to latest version (2013-11-29).
+	* m4/libtool.m4: Add patches for ppc64le.
+
+2013-06-24  Werner Koch  <wk@gnupg.org>
+
+	Release 2.1.1.
+	* configure.ac: Set LT version to C4/A4/R1.
+
+2013-06-19  Werner Koch  <wk@gnupg.org>
+
+	Changes to support W64.
+	* configure.ac (have_dosish_system): Set for W64.
+	* src/assuan-defs.h (SOCKET2HANDLE, HANDLE2SOCKET): Add versions for
+	W64.
+	* src/assuan-handler.c (assuan_command_parse_fd) [W64]: Use strtoull
+	to parse an FD.
+
+2013-06-17  Werner Koch  <wk@gnupg.org>
+
+	Add hack to have different names for 64 bit Windows DLLs.
+	* ltmain.sh: Prefix the SO number for W64 with a "6".
+
+	Support building for w64.
+
+2013-02-22  Werner Koch  <wk@gnupg.org>
+
+	Release version 2.1.0.
+	* configure.ac: Bump LT version to C4/A4/R0.
+
+	Add assuan_check_version and ASSUAN_VERSION_NUMBER.
+	* src/assuan.c (assuan_check_version): New.
+	(digitp, parse_version_number, parse_version_string)
+	(compare_versions): New.  Taken from libksba.
+	* configure.ac (VERSION_NUMBER): New ac_subst.
+	* src/Makefile.am (assuan.h): Pass VERSION and VERSION_NUMBER to
+	mkheader.
+	* src/assuan.h.in (ASSUAN_VERSION, ASSUAN_VERSION_NUMBER): New macros.
+	(assuan_check_version): New prototype.
+	* src/libassuan.def, src/libassuan.vers: Add assuan_check_version.
+	* src/mkheader.c (write_special, main): Support version and
+	version_number.
+	* tests/version.c: New.
+	* tests/Makefile.am (TESTS): Add version.
+
+	w32: Fix header inclusion order for newer toolchain.
+	* src/system-w32.c: Do not include windows.h here.
+
+	Beautify the BUILD_TIMESTAMP and put it into the binary.
+	* configure.ac (BUILD_TIMESTAMP): Use an ISO date string on all
+	platforms and ac_define it.
+	* src/sysutils.c (_assuan_sysutils_blurb): But revision and build date
+	into the binary.
+
+	w32ce: Adjust to changed API and make it build again.
+	* src/system-w32ce.c (__assuan_write, __assuan_recvmsg)
+	(__assuan_sendmsg, __assuan_waitpid): Make functions global.
+	* tests/ce-server.c: Fix syntax error (s/#else/#endif)
+
+	w32: Allow overriding a toolchain via ~/.gnupg-autogen.rc.
+	* autogen.sh (build-w32): Include {amd64,w32_toolprefixes).
+
+	Modernize release version management.
+	* configure.ac: Update to modern git version checking.  Remove svn
+	support.
+	* src/versioninfo.rc.in: Update copyright years.
+
+	Fix --with-{lib,}gpg-error-prefix.
+	* m4/gpg-error.m4: Update from current gpg-error git.
+
+	Update helper scripts.
+	* compile, config.guess, config.rpath, config.sub, depcomp,
+	* install-sh, mkinstalldirs: Update to current versions from gnulib.
+
+2013-02-07  Werner Koch  <wk@gnupg.org>
+
+	Make assuan_transact more robust against inquiry errors.
+	* src/client.c (assuan_transact): Send an CAN after an error return
+	from the inquiry callback.
+
+2012-11-26  Ben Kibbey  <bjk@luxsci.net>
+
+	Check for getpeerucred().
+	* configure.ac: check for getpeerucred() which (Open)Solaris/SunOS
+	uses.
+	* src/assuan-socket-server.c (accept_connection_bottom): make use
+	of getpeerucred().
+
+2012-11-21  Ben Kibbey  <bjk@luxsci.net>
+
+	Support LOCAL_PEEREID (NetBSD) and getpeereid() (FreeBSD)
+	* configure.ac: check for LOCAL_PEEREID and getpeereid().
+	* src/assuan-socket-server.c (accept_connection_bottom): make use of
+	LOCAL_PEEREID and getpeereid().
+
+2012-11-16  Werner Koch  <wk@gnupg.org>
+
+	Improve parsing of the GIT revision number.
+	* configure.ac (mmm4_revision): Use git rev-parse.  Print version
+	information at the end of a configure run.
+
+	Fix non-portable use of chmod in autogen.sh.
+	* autogen.sh: Remove option -c from chmod.
+
+2012-06-05  W. Trevor King  <wking@tremily.us>
+
+	src/assuan-handler.c: add help strings for standard commands.
+
+2012-04-20  W. Trevor King  <wking@tremily.us>
+
+	Update example code for pipe server.
+	* doc/assuan.texi: Fix server example code to use assuan_new.
+
+	Wrap reference to END with @code.
+	* doc/assuan.texi: Wrap reference to END with @code{}.
+
+2012-04-20  Werner Koch  <wk@gnupg.org>
+
+	State new contribution rules.
+	* doc/DCO: New.
+	* doc/HACKING: Doument new rules.  Give examples for commit logs.
+
+2012-01-25  Werner Koch  <wk@gnupg.org>
+
+	Make new functions also visible on non-W32.
+	* src/system-posix.c (__assuan_read, __assuan_write, __assuan_recvmsg)
+	(__assuan_sendmsg, __assuan_waitpid): Make functions global.
+	* src/libassuan.vers: Add above functions.
+	* configure.ac: Set version to 2.1.0-git.
+
+	Require gitlog-to-changelog to be installed.
+	* Makefile.am (GITLOG_TO_CHANGELOG): New.
+	(gen-ChangeLog): Use installed version of gitlog-to-changelog.
+	* build-aux/gitlog-to-changelog: Remove from repo.
+
+2012-01-24  Marcus Brinkmann  <marcus.brinkmann@ruhr-uni-bochum.de>
+
+	Fix npth port file handle use.
+	* assuan.h.in (ASSUAN_SYSTEM_NPTH_IMPL): Use npth_unprotect and
+	npth_protect with actual assuan functions instead of npth wrappers.
+	* libassuan.def: Add __assuan_read, __assuan_write, __assuan_sendmsg,
+	__assuan_recvmsg, __assuan_waitpid exports.
+	* system-w32.c (__assuan_read, __assuan_write, __assuan_sendmsg,
+	__assuan_recvmsg, __assuan_waitpid): Make non-static.
+
+2012-01-03  Marcus Brinkmann  <marcus.brinkmann@ruhr-uni-bochum.de>
+
+	Make assuan portable to NPTH.
+
+2011-12-20  Werner Koch  <wk@gnupg.org>
+
+	Post release version number update.
+
+	Release version 2.0.3.
+	* configure.ac: Bump LT version to C3/A3/R0.
+
+	Update gitlog-to-changelog to support --tear-off.
+
+2011-12-13  Werner Koch  <wk@gnupg.org>
+
+	Fix assuan_get_pid for pipe servers.
+	At some point in the past we introduced a regression in that the
+	client of a pipe server received its own pid and not the pid of
+	the server.
+
+	* src/assuan-pipe-connect.c (struct at_pipe_fork)
+	(struct at_socketpair_fork): Add PARENT_PID.
+	(at_pipe_fork_cb, at_socketpair_fork): Use PARENT_PID instead of getpid.
+	(pipe_connect, socketpair_connect): Set PARENT_PID.
+
+	vasprintf.c: Improve test code.
+	* src/vasprintf.c (checkit): Set flag for a test failure.
+	(main): Return error on any failure.
+
+2011-12-01  Werner Koch  <wk@gnupg.org>
+
+	Generate the ChangeLog from commit logs.
+	* build-aux/gitlog-to-changelog: New script.  Taken from gnulib.
+	* build-aux/git-log-fix: New file.
+	* build-aux/git-log-footer: New file.
+	* doc/HACKING: New file.
+	* ChangeLog: New file.
+	* Makefile.am (EXTRA_DIST): Add new files.
+	(gen-ChangeLog): New.
+	(dist-hook): Run gen-ChangeLog.
+	* autogen.sh: Install commit-msg hook for git.
+
+	Rename all ChangeLog files to ChangeLog-2011.
+
+2011-12-01  Werner Koch  <wk@gnupg.org>
+
+	NB: Changes done before December 1st, 2011 are described in
+	per directory files named ChangeLog-2011.  See doc/HACKING for
+	details.
+
+        -----
+	Copyright (C) 2011 Free Software Foundation, Inc.
+
+	Copying and distribution of this file and/or the original GIT
+	commit log messages, with or without modification, are
+	permitted provided the copyright notice and this notice are
+	preserved.

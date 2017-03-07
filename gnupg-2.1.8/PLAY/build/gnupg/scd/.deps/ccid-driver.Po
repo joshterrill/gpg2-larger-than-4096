@@ -1,0 +1,6 @@
+ccid-driver.o: /home/parallels/Documents/gnupg-2.1.8/scd/ccid-driver.c \
+ /usr/include/stdc-predef.h ../config.h
+
+/usr/include/stdc-predef.h:
+
+../config.h:
